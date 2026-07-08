@@ -352,9 +352,10 @@ textarea:focus {
 .power-card strong {
   display: block;
   color: #e88700;
-  font-size: clamp(31px, 10vw, 43px);
-  line-height: 1.12;
-  word-break: keep-all;
+  font-size: clamp(24px, 7.2vw, 40px);
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .power-card p {
