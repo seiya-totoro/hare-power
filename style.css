@@ -226,7 +226,8 @@ textarea:focus {
 }
 
 .primary-button,
-.secondary-button {
+.secondary-button,
+.danger-button {
   width: 100%;
   min-height: 58px;
   border-radius: 8px;
@@ -248,13 +249,22 @@ textarea:focus {
   border: 1px solid var(--line);
 }
 
+.danger-button {
+  margin-top: 12px;
+  color: #9b3b22;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(198, 86, 47, 0.28);
+}
+
 .primary-button:active,
-.secondary-button:active {
+.secondary-button:active,
+.danger-button:active {
   transform: translateY(2px) scale(0.99);
 }
 
 .primary-button:disabled,
-.secondary-button:disabled {
+.secondary-button:disabled,
+.danger-button:disabled {
   cursor: not-allowed;
   opacity: 0.56;
 }
@@ -308,6 +318,22 @@ textarea:focus {
   background: rgba(234, 249, 255, 0.86);
 }
 
+.url-stack {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.url-stack span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.button-stack {
+  display: grid;
+  gap: 10px;
+}
+
 .power-card {
   text-align: center;
   background:
@@ -357,6 +383,14 @@ textarea:focus {
   font-size: 13px;
   line-height: 1.5;
   background: rgba(234, 249, 255, 0.78);
+}
+
+.history-item.is-mine {
+  background: rgba(255, 244, 190, 0.82);
+}
+
+.history-item.is-partner {
+  background: rgba(234, 249, 255, 0.82);
 }
 
 .history-item strong {

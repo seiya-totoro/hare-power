@@ -11,33 +11,31 @@ const firebaseConfig = {
 const FIREBASE_SDK_VERSION = "10.12.5";
 
 const elements = {
-  senderScreen: document.querySelector("#senderScreen"),
-  receiverScreen: document.querySelector("#receiverScreen"),
+  sideLabel: document.querySelector("#sideLabel"),
   connectionStatus: document.querySelector("#connectionStatus"),
-  receiverConnectionStatus: document.querySelector("#receiverConnectionStatus"),
   sendForm: document.querySelector("#sendForm"),
-  replyForm: document.querySelector("#replyForm"),
+  yourName: document.querySelector("#yourName"),
   targetName: document.querySelector("#targetName"),
   powerAmount: document.querySelector("#powerAmount"),
   sendMessage: document.querySelector("#sendMessage"),
-  senderReplyEmpty: document.querySelector("#senderReplyEmpty"),
-  senderReplyText: document.querySelector("#senderReplyText"),
-  receiverUrl: document.querySelector("#receiverUrl"),
-  copyReceiverUrlButton: document.querySelector("#copyReceiverUrlButton"),
   receivedPower: document.querySelector("#receivedPower"),
   receivedFrom: document.querySelector("#receivedFrom"),
   receivedMessage: document.querySelector("#receivedMessage"),
-  replyInput: document.querySelector("#replyInput"),
-  senderHistory: document.querySelector("#senderHistory"),
-  receiverHistory: document.querySelector("#receiverHistory"),
+  myUrl: document.querySelector("#myUrl"),
+  partnerUrl: document.querySelector("#partnerUrl"),
+  copyPartnerUrlButton: document.querySelector("#copyPartnerUrlButton"),
+  newRoomButton: document.querySelector("#newRoomButton"),
+  clearHistoryButton: document.querySelector("#clearHistoryButton"),
+  historyList: document.querySelector("#historyList"),
   toast: document.querySelector("#toast")
 };
 
 const params = new URLSearchParams(window.location.search);
-const role = params.get("role") === "receiver" ? "receiver" : "sender";
 const roomId = cleanRoomId(params.get("room")) || createRoomId();
-const receiverUrl = buildUrl("receiver");
-const senderUrl = buildUrl("sender");
+const side = getSide();
+const partnerSide = side === "a" ? "b" : "a";
+const myUrl = buildUrl(side, roomId);
+const partnerUrl = buildUrl(partnerSide, roomId);
 let store;
 let toastTimer;
 
@@ -45,120 +43,109 @@ init();
 
 async function init() {
   ensureUrlHasRoom();
-  showRoleScreen();
-  elements.receiverUrl.textContent = receiverUrl;
-  elements.connectionStatus.textContent = "接続準備中です。";
-  elements.receiverConnectionStatus.textContent = "接続準備中です。";
-  elements.connectionStatus.classList.add("is-visible");
-  elements.receiverConnectionStatus.classList.add("is-visible");
+  elements.sideLabel.textContent = side === "a" ? "あなた用URL A" : "あなた用URL B";
+  elements.myUrl.textContent = myUrl;
+  elements.partnerUrl.textContent = partnerUrl;
+
+  restoreNames();
+  bindEvents();
 
   store = await createStore();
   await store.listen(renderState);
-  bindEvents();
   updateStatus();
 }
 
 function bindEvents() {
   elements.sendForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const senderName = elements.yourName.value.trim();
     const targetName = elements.targetName.value.trim();
     const amount = Number(elements.powerAmount.value);
     const message = elements.sendMessage.value.trim();
 
-    if (!targetName || !Number.isFinite(amount) || amount < 1 || !message) {
+    if (!senderName || !targetName || !Number.isFinite(amount) || amount < 1 || !message) {
       showToast("入力を確認してください。");
       return;
     }
 
+    saveNames(senderName, targetName);
     await store.sendPower({
+      side,
+      senderName,
       targetName,
       amount: Math.round(amount),
       message
     });
+    elements.sendMessage.value = "";
     showToast(`${Math.round(amount)}億晴れパワーを送信しました☀️`);
   });
 
-  elements.replyForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const text = elements.replyInput.value.trim();
+  elements.copyPartnerUrlButton.addEventListener("click", async () => {
+    await copyText(partnerUrl);
+    showToast("相手用URLをコピーしました。");
+  });
 
-    if (!text) {
-      showToast("返信メッセージを入力してください。");
+  elements.newRoomButton.addEventListener("click", () => {
+    const newRoomId = createRoomId();
+    window.location.href = buildUrl("a", newRoomId);
+  });
+
+  elements.clearHistoryButton.addEventListener("click", async () => {
+    const shouldClear = window.confirm("この部屋のやりとり履歴を消しますか？相手の画面からも消えます。");
+    if (!shouldClear) {
       return;
     }
 
-    await store.sendReply(text);
-    elements.replyInput.value = "";
-    showToast("返信を送りました☁️→☀️");
+    await store.clearHistory();
+    showToast("履歴を消しました。");
   });
-
-  elements.copyReceiverUrlButton.addEventListener("click", async () => {
-    await copyText(receiverUrl);
-    showToast("受け取る側URLをコピーしました。");
-  });
-}
-
-function showRoleScreen() {
-  document.title = role === "receiver" ? "晴れパワー受信箱" : "晴れパワー送信機";
-  elements.senderScreen.classList.toggle("is-hidden", role !== "sender");
-  elements.receiverScreen.classList.toggle("is-hidden", role !== "receiver");
 }
 
 function renderState(state) {
-  const latest = state.latest;
-  const reply = state.reply;
   const history = state.history || [];
+  const incoming = [...history]
+    .reverse()
+    .find((item) => item.type === "send" && item.side && item.side !== side);
 
-  if (latest) {
-    elements.targetName.value = latest.targetName || elements.targetName.value;
-    elements.receivedPower.textContent = `${latest.amount}億晴れパワー`;
-    elements.receivedFrom.textContent = `${latest.targetName || "あなた"}宛に届いています☀️`;
-    elements.receivedMessage.textContent = latest.message || "メッセージはありません。";
+  if (incoming) {
+    elements.receivedPower.textContent = `${incoming.amount}億晴れパワー`;
+    elements.receivedFrom.textContent = `${incoming.senderName || "相手"}から${incoming.targetName ? ` ${incoming.targetName}へ` : ""}届いています☀️`;
+    elements.receivedMessage.textContent = incoming.message || "メッセージはありません。";
+    if (!elements.targetName.value && incoming.senderName) {
+      elements.targetName.value = incoming.senderName;
+    }
   } else {
     elements.receivedPower.textContent = "まだ届いていません";
     elements.receivedFrom.textContent = "";
-    elements.receivedMessage.textContent = "送信を待っています。";
+    elements.receivedMessage.textContent = "相手からの送信を待っています。";
   }
 
-  if (reply?.text) {
-    elements.senderReplyEmpty.classList.add("is-hidden");
-    elements.senderReplyText.textContent = reply.text;
-  } else {
-    elements.senderReplyEmpty.classList.remove("is-hidden");
-    elements.senderReplyText.textContent = "";
-  }
-
-  renderHistory(elements.senderHistory, history);
-  renderHistory(elements.receiverHistory, history);
+  renderHistory(history);
 }
 
-function renderHistory(container, history) {
-  container.innerHTML = "";
+function renderHistory(history) {
+  elements.historyList.innerHTML = "";
 
   if (!history.length) {
     const empty = document.createElement("p");
     empty.className = "empty-text";
     empty.textContent = "まだ履歴はありません。";
-    container.appendChild(empty);
+    elements.historyList.appendChild(empty);
     return;
   }
 
-  history.slice(-8).reverse().forEach((item) => {
+  history.slice(-12).reverse().forEach((item) => {
     const row = document.createElement("article");
-    row.className = "history-item";
     const title = document.createElement("strong");
     const body = document.createElement("span");
+    const isMine = item.side === side;
 
-    if (item.type === "reply") {
-      title.textContent = "返信";
-      body.textContent = item.text;
-    } else {
-      title.textContent = `${item.amount}億晴れパワー送信`;
-      body.textContent = item.message;
-    }
+    row.className = `history-item ${isMine ? "is-mine" : "is-partner"}`;
+    title.textContent = `${isMine ? "あなた" : "相手"}から ${item.amount}億晴れパワー`;
+    body.textContent = `${item.senderName || "ななし"} → ${item.targetName || "相手"}：${item.message || ""}`;
 
     row.append(title, body);
-    container.appendChild(row);
+    elements.historyList.appendChild(row);
   });
 }
 
@@ -192,14 +179,12 @@ async function createFirebaseStore() {
   const app = initializeApp(firebaseConfig);
   const database = getDatabase(app);
   const roomRef = ref(database, `rooms/${roomId}`);
-  let cache = {};
 
   return {
     mode: "firebase",
     async listen(callback) {
       onValue(roomRef, (snapshot) => {
-        cache = snapshot.val() || {};
-        callback(normalizeState(cache));
+        callback(normalizeState(snapshot.val() || {}));
       });
     },
     async sendPower(payload) {
@@ -210,23 +195,18 @@ async function createFirebaseStore() {
       };
       await update(roomRef, {
         latest: sendPayload,
-        "meta/senderUrl": senderUrl,
-        "meta/receiverUrl": receiverUrl,
+        "meta/urlA": buildUrl("a", roomId),
+        "meta/urlB": buildUrl("b", roomId),
         "meta/updatedAt": serverTimestamp()
       });
       await set(push(ref(database, `rooms/${roomId}/history`)), sendPayload);
     },
-    async sendReply(text) {
-      const replyPayload = {
-        type: "reply",
-        text,
-        createdAt: Date.now()
-      };
+    async clearHistory() {
       await update(roomRef, {
-        reply: replyPayload,
+        latest: null,
+        history: null,
         "meta/updatedAt": serverTimestamp()
       });
-      await set(push(ref(database, `rooms/${roomId}/history`)), replyPayload);
     }
   };
 }
@@ -259,15 +239,10 @@ function createLocalStore() {
       writeLocalState(state);
       callback(readLocalState());
     },
-    async sendReply(text) {
+    async clearHistory() {
       const state = readLocalState();
-      const replyPayload = {
-        type: "reply",
-        text,
-        createdAt: Date.now()
-      };
-      state.reply = replyPayload;
-      state.history = [...(state.history || []), replyPayload];
+      state.latest = null;
+      state.history = [];
       writeLocalState(state);
       callback(readLocalState());
     }
@@ -288,23 +263,21 @@ function createLocalStore() {
 
 function normalizeState(rawState) {
   const history = rawState.history
-    ? Object.values(rawState.history).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+    ? Object.values(rawState.history)
+        .filter((item) => item && item.type === "send")
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
     : [];
 
   return {
     latest: rawState.latest || null,
-    reply: rawState.reply || null,
     history
   };
 }
 
 function updateStatus() {
-  const message = store.mode === "firebase"
-    ? "Firebaseに接続中です。同じ秘密URLを開いた相手にも届きます。"
-    : "Firebase未設定のため、この端末だけのデモ保存で動いています。READMEの手順でFirebaseを設定すると2人で使えます。";
-
-  elements.connectionStatus.textContent = message;
-  elements.receiverConnectionStatus.textContent = message;
+  elements.connectionStatus.textContent = store.mode === "firebase"
+    ? "Firebaseに接続中です。同じ部屋の相手URLとリアルタイムでつながります。"
+    : "Firebase未設定のため、この端末だけのデモ保存で動いています。";
 }
 
 function isFirebaseConfigured() {
@@ -316,19 +289,30 @@ function isFirebaseConfigured() {
   );
 }
 
-function buildUrl(nextRole) {
+function getSide() {
+  const urlSide = params.get("side");
+  if (urlSide === "a" || urlSide === "b") {
+    return urlSide;
+  }
+
+  const legacyRole = params.get("role");
+  return legacyRole === "receiver" ? "b" : "a";
+}
+
+function buildUrl(nextSide, nextRoomId) {
   const url = new URL(window.location.href);
-  url.searchParams.set("role", nextRole);
-  url.searchParams.set("room", roomId);
+  url.searchParams.delete("role");
+  url.searchParams.set("side", nextSide);
+  url.searchParams.set("room", nextRoomId);
   return url.toString();
 }
 
 function ensureUrlHasRoom() {
-  if (params.get("role") === role && cleanRoomId(params.get("room"))) {
+  if (params.get("side") === side && cleanRoomId(params.get("room"))) {
     return;
   }
 
-  window.history.replaceState({}, "", senderUrl);
+  window.history.replaceState({}, "", myUrl);
 }
 
 function cleanRoomId(value) {
@@ -339,6 +323,16 @@ function createRoomId() {
   const bytes = new Uint8Array(12);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 24);
+}
+
+function restoreNames() {
+  const names = JSON.parse(localStorage.getItem("hare-power-names") || "{}");
+  elements.yourName.value = names.yourName || "";
+  elements.targetName.value = names.targetName || "";
+}
+
+function saveNames(yourName, targetName) {
+  localStorage.setItem("hare-power-names", JSON.stringify({ yourName, targetName }));
 }
 
 async function copyText(text) {

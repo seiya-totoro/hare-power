@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>晴れパワー送信機</title>
+  <title>晴れパワー送受信機</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,14 +15,28 @@
       <span class="float-emoji sparkle-one">✨</span>
     </div>
 
-    <section class="weather-card" id="senderScreen">
-      <p class="eyebrow">送る側URL</p>
-      <h1>晴れパワー送信機</h1>
-      <p class="lead">2人だけの秘密URLで、晴れパワーを届けよう。</p>
+    <section class="weather-card">
+      <p class="eyebrow" id="sideLabel">2人だけの秘密URL</p>
+      <h1>晴れパワー送受信機</h1>
+      <p class="lead">お互いに晴れパワーを送って、届いたメッセージも見られます。</p>
 
-      <div class="status-panel" id="connectionStatus"></div>
+      <div class="status-panel is-visible" id="connectionStatus">接続準備中です。</div>
+
+      <section class="power-card" id="latestPowerCard">
+        <span class="power-label">相手から届いた晴れパワー</span>
+        <strong id="receivedPower">まだ届いていません</strong>
+        <p id="receivedFrom"></p>
+      </section>
+
+      <section class="message-card">
+        <span>届いたメッセージ</span>
+        <p id="receivedMessage">相手からの送信を待っています。</p>
+      </section>
 
       <form id="sendForm" class="send-form">
+        <label for="yourName">あなたの名前</label>
+        <input id="yourName" name="yourName" type="text" placeholder="例：そうた" maxlength="20" required>
+
         <label for="targetName">相手の名前</label>
         <input id="targetName" name="targetName" type="text" placeholder="例：みさき" maxlength="20" required>
 
@@ -39,51 +53,24 @@
       </form>
 
       <section class="mini-card">
-        <h2>相手からの返信</h2>
-        <p class="empty-text" id="senderReplyEmpty">まだ返信は届いていません。</p>
-        <p class="reply-text" id="senderReplyText"></p>
+        <h2>URLを送る</h2>
+        <p class="hint">「相手用URL」をLINEやInstagram DMで送ってください。新しいURLを作ると、前のテスト履歴とは別の部屋になります。</p>
+        <div class="url-stack">
+          <span>あなた用URL</span>
+          <div class="url-box" id="myUrl"></div>
+          <span>相手用URL</span>
+          <div class="url-box" id="partnerUrl"></div>
+        </div>
+        <div class="button-stack">
+          <button type="button" class="secondary-button" id="copyPartnerUrlButton">相手用URLをコピー</button>
+          <button type="button" class="secondary-button" id="newRoomButton">新しいURLを作る</button>
+        </div>
       </section>
-
-      <section class="mini-card">
-        <h2>受け取る側URL</h2>
-        <p class="hint">このURLをLINEやInstagram DMで相手に送ってください。</p>
-        <div class="url-box" id="receiverUrl"></div>
-        <button type="button" class="secondary-button" id="copyReceiverUrlButton">受け取る側URLをコピー</button>
-      </section>
-
-      <section class="mini-card">
-        <h2>送信履歴</h2>
-        <div class="history-list" id="senderHistory"></div>
-      </section>
-    </section>
-
-    <section class="weather-card receiver-card is-hidden" id="receiverScreen">
-      <p class="eyebrow">受け取る側URL</p>
-      <h1>晴れパワー受信箱</h1>
-      <p class="lead">届いた晴れパワーを見て、ひとこと返そう。</p>
-
-      <div class="status-panel" id="receiverConnectionStatus"></div>
-
-      <section class="power-card" id="latestPowerCard">
-        <span class="power-label">届いた晴れパワー</span>
-        <strong id="receivedPower">まだ届いていません</strong>
-        <p id="receivedFrom"></p>
-      </section>
-
-      <section class="message-card">
-        <span>届いたメッセージ</span>
-        <p id="receivedMessage">送信を待っています。</p>
-      </section>
-
-      <form id="replyForm" class="send-form">
-        <label for="replyInput">返信メッセージ</label>
-        <textarea id="replyInput" name="replyInput" placeholder="晴れパワー受け取った☀️" maxlength="120" required></textarea>
-        <button type="submit" class="primary-button">返信する☁️→☀️</button>
-      </form>
 
       <section class="mini-card">
         <h2>やりとり履歴</h2>
-        <div class="history-list" id="receiverHistory"></div>
+        <div class="history-list" id="historyList"></div>
+        <button type="button" class="danger-button" id="clearHistoryButton">履歴を消す</button>
       </section>
     </section>
 
