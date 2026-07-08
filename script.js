@@ -38,6 +38,8 @@ const myUrl = buildUrl(side, roomId);
 const partnerUrl = buildUrl(partnerSide, roomId);
 let store;
 let toastTimer;
+let latestNotifiedIncomingAt = 0;
+let hasRenderedOnce = false;
 
 init();
 
@@ -60,24 +62,37 @@ function bindEvents() {
     event.preventDefault();
     const senderName = elements.yourName.value.trim();
     const targetName = elements.targetName.value.trim();
-    const amount = Number(elements.powerAmount.value);
+    const amountText = elements.powerAmount.value.trim();
+    const hasAmount = amountText !== "";
+    const amount = hasAmount ? Number(amountText) : null;
     const message = elements.sendMessage.value.trim();
 
-    if (!senderName || !targetName || !Number.isFinite(amount) || amount < 1 || !message) {
+    if (!senderName || !targetName || (!hasAmount && !message)) {
       showToast("入力を確認してください。");
       return;
     }
 
-    saveNames(senderName, targetName);
-    await store.sendPower({
+    if (hasAmount && (!Number.isFinite(amount) || amount < 1)) {
+      showToast("晴れパワーは1以上の数字で入力してください。");
+      return;
+    }
+
+    const payload = {
       side,
       senderName,
       targetName,
-      amount: Math.round(amount),
+      amount: hasAmount ? Math.round(amount) : null,
       message
-    });
-    elements.sendMessage.value = "";
-    showToast(`${Math.round(amount)}億晴れパワーを送信しました☀️`);
+    };
+
+    try {
+      saveNames(senderName, targetName);
+      await store.sendPower(payload);
+      elements.sendMessage.value = "";
+      showToast(`${formatSentContent(payload)}を送信しました☀️`);
+    } catch {
+      showToast("送信できませんでした。URLかFirebaseルールを確認してください。");
+    }
   });
 
   elements.copyPartnerUrlButton.addEventListener("click", async () => {
@@ -96,8 +111,12 @@ function bindEvents() {
       return;
     }
 
-    await store.clearHistory();
-    showToast("履歴を消しました。");
+    try {
+      await store.clearHistory();
+      showToast("履歴を消しました。");
+    } catch {
+      showToast("履歴を消せませんでした。少し待ってもう一度試してください。");
+    }
   });
 }
 
@@ -108,7 +127,7 @@ function renderState(state) {
     .find((item) => item.type === "send" && item.side && item.side !== side);
 
   if (incoming) {
-    elements.receivedPower.textContent = `${incoming.amount}億晴れパワー`;
+    elements.receivedPower.textContent = formatIncomingMain(incoming);
     elements.receivedFrom.textContent = `${incoming.senderName || "相手"}から${incoming.targetName ? ` ${incoming.targetName}へ` : ""}届いています☀️`;
     elements.receivedMessage.textContent = incoming.message || "メッセージはありません。";
     if (!elements.targetName.value && incoming.senderName) {
@@ -121,6 +140,7 @@ function renderState(state) {
   }
 
   renderHistory(history);
+  notifyIncoming(incoming);
 }
 
 function renderHistory(history) {
@@ -141,12 +161,60 @@ function renderHistory(history) {
     const isMine = item.side === side;
 
     row.className = `history-item ${isMine ? "is-mine" : "is-partner"}`;
-    title.textContent = `${isMine ? "あなた" : "相手"}から ${item.amount}億晴れパワー`;
+    title.textContent = `${isMine ? "あなた" : "相手"}から ${formatSentContent(item)}`;
     body.textContent = `${item.senderName || "ななし"} → ${item.targetName || "相手"}：${item.message || ""}`;
 
     row.append(title, body);
     elements.historyList.appendChild(row);
   });
+}
+
+function notifyIncoming(incoming) {
+  if (!incoming) {
+    hasRenderedOnce = true;
+    return;
+  }
+
+  const createdAt = incoming.createdAt || 0;
+  if (!hasRenderedOnce) {
+    latestNotifiedIncomingAt = createdAt;
+    hasRenderedOnce = true;
+    return;
+  }
+
+  if (createdAt <= latestNotifiedIncomingAt) {
+    return;
+  }
+
+  latestNotifiedIncomingAt = createdAt;
+  showToast(`${incoming.senderName || "相手"}から${formatSentContent(incoming)}が届きました☀️`);
+  vibrateOnIncoming();
+}
+
+function vibrateOnIncoming() {
+  if ("vibrate" in navigator) {
+    navigator.vibrate([120, 60, 120]);
+  }
+}
+
+function hasPowerAmount(item) {
+  return Number.isFinite(Number(item.amount)) && Number(item.amount) >= 1;
+}
+
+function formatSentContent(item) {
+  if (hasPowerAmount(item)) {
+    return `${Math.round(Number(item.amount))}億晴れパワー`;
+  }
+
+  return "メッセージ";
+}
+
+function formatIncomingMain(item) {
+  if (hasPowerAmount(item)) {
+    return `${Math.round(Number(item.amount))}億晴れパワー`;
+  }
+
+  return "メッセージが届きました";
 }
 
 async function createStore() {

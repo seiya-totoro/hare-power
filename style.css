@@ -271,8 +271,7 @@ textarea:focus {
 
 .status-panel,
 .mini-card,
-.message-card,
-.power-card {
+.received-card {
   margin: 18px 0 0;
   padding: 15px;
   border: 1px solid var(--line);
@@ -334,7 +333,9 @@ textarea:focus {
   gap: 10px;
 }
 
-.power-card {
+.received-card {
+  margin-top: 28px;
+  padding: 20px 16px;
   text-align: center;
   background:
     radial-gradient(circle at 78% 15%, rgba(255, 212, 79, 0.36) 0 42px, transparent 44px),
@@ -342,14 +343,14 @@ textarea:focus {
 }
 
 .power-label,
-.message-card span {
+.received-message span {
   display: block;
   margin-bottom: 8px;
   color: var(--muted);
   font-size: 13px;
 }
 
-.power-card strong {
+.received-card strong {
   display: block;
   color: #e88700;
   font-size: clamp(24px, 7.2vw, 40px);
@@ -358,18 +359,33 @@ textarea:focus {
   word-break: normal;
 }
 
-.power-card p {
+.received-card > p {
   margin: 10px 0 0;
   color: var(--blue-deep);
   font-size: 15px;
 }
 
-.message-card p {
+.received-message {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 8px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(37, 137, 208, 0.14);
+}
+
+.received-message p {
   margin: 0;
   color: var(--ink);
   font-size: 17px;
   line-height: 1.55;
   white-space: pre-wrap;
+}
+
+.send-panel {
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(37, 137, 208, 0.18);
 }
 
 .history-list {

@@ -22,18 +22,17 @@
 
       <div class="status-panel" id="connectionStatus" aria-live="polite"></div>
 
-      <section class="power-card" id="latestPowerCard">
+      <section class="received-card" id="latestPowerCard">
         <span class="power-label">相手から届いた晴れパワー</span>
         <strong id="receivedPower">まだ届いていません</strong>
         <p id="receivedFrom"></p>
+        <div class="received-message">
+          <span>届いたメッセージ</span>
+          <p id="receivedMessage">相手からの送信を待っています。</p>
+        </div>
       </section>
 
-      <section class="message-card">
-        <span>届いたメッセージ</span>
-        <p id="receivedMessage">相手からの送信を待っています。</p>
-      </section>
-
-      <form id="sendForm" class="send-form">
+      <form id="sendForm" class="send-form send-panel">
         <label for="yourName">あなたの名前</label>
         <input id="yourName" name="yourName" type="text" maxlength="20" required>
 
@@ -42,14 +41,14 @@
 
         <label for="powerAmount">送る晴れパワー</label>
         <div class="power-input-row">
-          <input id="powerAmount" name="powerAmount" type="number" inputmode="numeric" min="1" max="9999" required>
+          <input id="powerAmount" name="powerAmount" type="number" inputmode="numeric" min="1" max="9999">
           <span>億晴れパワー</span>
         </div>
 
         <label for="sendMessage">一緒に送るメッセージ</label>
-        <textarea id="sendMessage" name="sendMessage" maxlength="120" required></textarea>
+        <textarea id="sendMessage" name="sendMessage" maxlength="120"></textarea>
 
-        <button type="submit" class="primary-button">晴れパワーを送る☀️</button>
+        <button type="submit" class="primary-button">晴れパワー・メッセージを送る☀️</button>
       </form>
 
       <section class="mini-card">
