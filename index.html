@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>晴れパワー送信機</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <div class="sky-decor" aria-hidden="true">
+      <span class="float-emoji sun-one">☀️</span>
+      <span class="float-emoji cloud-one">☁️</span>
+      <span class="float-emoji cloud-two">☁️</span>
+      <span class="float-emoji sparkle-one">✨</span>
+    </div>
+
+    <section class="weather-card" id="senderScreen">
+      <p class="eyebrow">送る側URL</p>
+      <h1>晴れパワー送信機</h1>
+      <p class="lead">2人だけの秘密URLで、晴れパワーを届けよう。</p>
+
+      <div class="status-panel" id="connectionStatus"></div>
+
+      <form id="sendForm" class="send-form">
+        <label for="targetName">相手の名前</label>
+        <input id="targetName" name="targetName" type="text" placeholder="例：みさき" maxlength="20" required>
+
+        <label for="powerAmount">送る晴れパワー</label>
+        <div class="power-input-row">
+          <input id="powerAmount" name="powerAmount" type="number" inputmode="numeric" min="1" max="9999" placeholder="72" required>
+          <span>億晴れパワー</span>
+        </div>
+
+        <label for="sendMessage">一緒に送るメッセージ</label>
+        <textarea id="sendMessage" name="sendMessage" placeholder="明日は晴れる気がする笑" maxlength="120" required></textarea>
+
+        <button type="submit" class="primary-button">晴れパワーを送る☀️</button>
+      </form>
+
+      <section class="mini-card">
+        <h2>相手からの返信</h2>
+        <p class="empty-text" id="senderReplyEmpty">まだ返信は届いていません。</p>
+        <p class="reply-text" id="senderReplyText"></p>
+      </section>
+
+      <section class="mini-card">
+        <h2>受け取る側URL</h2>
+        <p class="hint">このURLをLINEやInstagram DMで相手に送ってください。</p>
+        <div class="url-box" id="receiverUrl"></div>
+        <button type="button" class="secondary-button" id="copyReceiverUrlButton">受け取る側URLをコピー</button>
+      </section>
+
+      <section class="mini-card">
+        <h2>送信履歴</h2>
+        <div class="history-list" id="senderHistory"></div>
+      </section>
+    </section>
+
+    <section class="weather-card receiver-card is-hidden" id="receiverScreen">
+      <p class="eyebrow">受け取る側URL</p>
+      <h1>晴れパワー受信箱</h1>
+      <p class="lead">届いた晴れパワーを見て、ひとこと返そう。</p>
+
+      <div class="status-panel" id="receiverConnectionStatus"></div>
+
+      <section class="power-card" id="latestPowerCard">
+        <span class="power-label">届いた晴れパワー</span>
+        <strong id="receivedPower">まだ届いていません</strong>
+        <p id="receivedFrom"></p>
+      </section>
+
+      <section class="message-card">
+        <span>届いたメッセージ</span>
+        <p id="receivedMessage">送信を待っています。</p>
+      </section>
+
+      <form id="replyForm" class="send-form">
+        <label for="replyInput">返信メッセージ</label>
+        <textarea id="replyInput" name="replyInput" placeholder="晴れパワー受け取った☀️" maxlength="120" required></textarea>
+        <button type="submit" class="primary-button">返信する☁️→☀️</button>
+      </form>
+
+      <section class="mini-card">
+        <h2>やりとり履歴</h2>
+        <div class="history-list" id="receiverHistory"></div>
+      </section>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
